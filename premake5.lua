@@ -4,6 +4,7 @@ solution "PubClientSolution"
     project "mqtt_sub_client"
         kind "ConsoleApp"
         language "C"
+        toolset "gcc"
         files { 
             -- "src/*.h", 
             "subscribe/*.c", 
@@ -11,6 +12,8 @@ solution "PubClientSolution"
             "lib/*.c", 
             "queue/*.h",
             "queue/*.c",
+            "cjson/*.c",
+            "cjson/*.h",
             "timer/*.h",
             "timer/*.c"}
             includedirs { "include", ".", "/usr/include/postgresql"}
@@ -18,7 +21,7 @@ solution "PubClientSolution"
         
         defines { "VERSION=\"2.0.13\"", "WITH_THREADING"}
         linkoptions {"-pthread", "-ldl"}
-        links{"sqlite3", "pq", "cjson", "z"}
+        links{"sqlite3", "pq", "z"}
 
     filter { "configurations:Debug" }
         defines { "DEBUG" }

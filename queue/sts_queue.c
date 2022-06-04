@@ -1,6 +1,6 @@
 #include "sts_queue.h"
 #include <stdlib.h>
-#include <threads.h>
+#include <pthread.h>
 
 typedef struct StsElement {
   void *next;
@@ -10,7 +10,7 @@ typedef struct StsElement {
 struct StsHeader {
   StsElement *head;
   StsElement *tail;
-  mtx_t *mutex;
+  pthread_mutex_t *mutex;
 };
 
 static StsHeader* create();
@@ -19,7 +19,7 @@ static StsHeader* create() {
   handle->head = NULL;
   handle->tail = NULL;
 
-  mtx_t *mutex = malloc(sizeof(*mutex));
+  pthread_mutex_t *mutex = malloc(sizeof(*mutex));
   handle->mutex = mutex;
   
   return handle;
@@ -39,7 +39,7 @@ static void push(StsHeader *header, void *elem) {
   element->value = elem;
   element->next = NULL;
 
-  mtx_lock(header->mutex);
+  pthread_mutex_lock(header->mutex);
   // Is list empty
   if (header->head == NULL) {
 	header->head = element;
@@ -50,17 +50,17 @@ static void push(StsHeader *header, void *elem) {
 	oldTail->next = element;
 	header->tail = element;
   }
-  mtx_unlock(header->mutex);
+  pthread_mutex_unlock(header->mutex);
 }
 
 static void* pop(StsHeader *header);
 static void* pop(StsHeader *header) {
-  mtx_lock(header->mutex);
+  pthread_mutex_lock(header->mutex);
   StsElement *head = header->head;
 
   // Is empty?
   if (head == NULL) {
-	mtx_unlock(header->mutex);
+	pthread_mutex_unlock(header->mutex);
 	return NULL;
   } else {
 	// Rewire
@@ -70,7 +70,7 @@ static void* pop(StsHeader *header) {
 	void *value = head->value;
 	free(head);
 	
-	mtx_unlock(header->mutex);
+	pthread_mutex_unlock(header->mutex);
 	return value;
   }
 }

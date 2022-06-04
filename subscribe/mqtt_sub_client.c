@@ -10,9 +10,9 @@
 #include <unistd.h>
 #include <sqlite3.h>
 #include <libpq-fe.h>
-#include <threads.h>
+#include <pthread.h>
 
-#include <cjson/cJSON.h>
+#include "cjson/cJSON.h"
 
 #include <zlib.h>
 
@@ -466,7 +466,7 @@ static StsHeader *response_queue;
 // 	return 0;
 // }
 
-int response_run(void *_data)
+void *response_run(void *_data)
 {
 	while(true)
 	{
@@ -652,7 +652,7 @@ void get_sensor_net_database_info(const char *topic, struct sensor_net_database_
 }
 
 
-int send_to_database(void *data)
+void *send_to_database(void *data)
 {
 	struct timer_t time;
 	timer_init(&time);
@@ -821,14 +821,14 @@ int main(int argc, char *argv[])
 {
 	struct mosquitto *mosq;
 	int rc;
-	thrd_t thread_handle;
-	thrd_t thread_handle_response;
+	pthread_t thread_handle;
+	pthread_t thread_handle_response;
 
 	queue = StsQueue.create();
 	response_queue = StsQueue.create();
 
-	thrd_create(&thread_handle, send_to_database, 0);
-	thrd_create(&thread_handle_response, response_run, 0);
+	pthread_create(&thread_handle, NULL, send_to_database, 0);
+	pthread_create(&thread_handle_response, NULL, response_run, 0);
 
 	/* Required before calling other mosquitto functions */
 	mosquitto_lib_init();
@@ -854,7 +854,7 @@ int main(int argc, char *argv[])
 	 * This call makes the socket connection only, it does not complete the MQTT
 	 * CONNECT/CONNACK flow, you should use mosquitto_loop_start() or
 	 * mosquitto_loop_forever() for processing net traffic. */
-	rc = mosquitto_connect(mosq, "broker.emqx.io", 1883, 60);
+	rc = mosquitto_connect(mosq, "broker.hivemq.com", 1883, 60);
 	if(rc != MOSQ_ERR_SUCCESS){
 		mosquitto_destroy(mosq);
 		LOG_ERROR("%s\n", mosquitto_strerror(rc));
